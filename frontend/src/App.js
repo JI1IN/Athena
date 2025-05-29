@@ -1,9 +1,33 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import "./App.css";
-import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
+import { PieChart, Pie, Cell, Legend, Tooltip as RechartsTooltip } from 'recharts';
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A020F0', '#FF3333'];
+const LANGUAGE_COLORS = {
+  JavaScript: '#f1e05a',  // Yellow
+  Python: '#3572A5',      // Blue
+  Java: '#b07219',        // Brown
+  TypeScript: '#2b7489',  // Dark blue
+  Ruby: '#701516',        // Dark red
+  PHP: '#4F5D95',         // Purple blue
+  C: '#555555',           // Dark gray
+  'C++': '#f34b7d',       // Pinkish
+  'C#': '#178600',        // Green
+  Go: '#00ADD8',          // Light blue
+  Shell: '#89e051',       // Green
+  Swift: '#ffac45',       // Orange
+  Kotlin: '#F18E33',      // Orange
+  Rust: '#dea584',        // Tan
+  HTML: '#e34c26',        // Orange-red
+  CSS: '#563d7c',         // Purple
+  ObjectiveC: '#438eff',  // Light blue
+  Scala: '#c22d40',       // Red
+  Dart: '#00B4AB',        // Cyan
+  Vue: '#41b883',         // Green
+  Unknown: '#999999',     // Gray fallback
+};
+
+const GRAY_COLOR = '#999999';
 
 function App() {
   const [username, setUsername] = useState('');
@@ -16,6 +40,7 @@ function App() {
     setError('');
     setUserData(null);
     setRepos([]);
+    setRecentRepos([]);
 
     try {
       const userRes = await axios.get(`http://localhost:8000/user/${username}`);
@@ -37,7 +62,10 @@ function App() {
     const lang = repo.language || 'Unknown';
     languageCount[lang] = (languageCount[lang] || 0) + 1;
   });
+
   const pieData = Object.entries(languageCount).map(([name, value]) => ({ name, value }));
+
+  const getColor = (language) => LANGUAGE_COLORS[language] || GRAY_COLOR;
 
   return (
     <div className="min-h-screen bg-base-200 p-6">
@@ -74,49 +102,53 @@ function App() {
             <div className="mt-6">
               <h3 className="text-lg font-bold mb-2">Languages Used in Repos</h3>
               {pieData.length > 0 ? (
-                  <>
-                  <PieChart width={400} height={400}>
-                    <Pie
-                        data={pieData}
-                        dataKey="value"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={120}
-                        label
-                    >
-                      {pieData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]}/>
-                      ))}
-                    </Pie>
-
-                    <Tooltip/>
-                    <Legend/>
-                  </PieChart>
-            <div className="mt-6">
-        <h3 className="text-lg font-bold mb-2">Most Recently Active Repositories</h3>
-        {recentRepos.length > 0 ? (
-          <ul className="list-disc list-inside text-sm text-blue-600">
-            {recentRepos.map((repo, index) => (
-              <li key={index}>
-                <a
-                  href={repo.html_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="link link-hover"
-                >
-                  {repo.name}
-                </a>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-sm text-gray-500">No recent repositories found.</p>
-        )}
-      </div>
-                      </>
+                <PieChart width={400} height={400}>
+                  <Pie
+                    data={pieData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={120}
+                    label
+                  >
+                    {pieData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={getColor(entry.name)}
+                      />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip
+                    formatter={(value, name) => [`${value} repo(s)`, name]}
+                    wrapperStyle={{ fontSize: '14px' }}
+                  />
+                  <Legend />
+                </PieChart>
               ) : (
-                  <p className="text-sm text-gray-500">No repositories found.</p>
+                <p className="text-sm text-gray-500">No repositories found.</p>
+              )}
+            </div>
+
+            <div className="mt-6">
+              <h3 className="text-lg font-bold mb-2">Most Recently Active Repositories</h3>
+              {recentRepos.length > 0 ? (
+                <ul className="list-disc list-inside text-sm text-blue-600">
+                  {recentRepos.map((repo, index) => (
+                    <li key={index}>
+                      <a
+                        href={repo.html_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="link link-hover"
+                      >
+                        {repo.name}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-gray-500">No recent repositories found.</p>
               )}
             </div>
           </div>

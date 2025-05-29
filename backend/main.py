@@ -1,6 +1,8 @@
 from fastapi import FastAPI, HTTPException
 import httpx
 import os
+from datetime import datetime, timedelta, date
+from collections import defaultdict
 
 app = FastAPI()
 
@@ -36,3 +38,5 @@ async def get_recent_repos(username: str):
         sorted_repos = sorted(repos, key=lambda r: r["pushed_at"], reverse=True)
         top_3 = sorted_repos[:3]
         return [{"name": r["name"], "html_url": r["html_url"]} for r in top_3]
+
+
