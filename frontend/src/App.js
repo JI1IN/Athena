@@ -68,6 +68,7 @@ function App() {
   const getColor = (language) => LANGUAGE_COLORS[language] || GRAY_COLOR;
 
   return (
+      <div>
     <div className="min-h-screen bg-base-200 p-6">
       <div className="max-w-3xl mx-auto">
         <h1 className="text-4xl font-bold text-center mb-6">Athena: GitHub Analytics</h1>
@@ -155,6 +156,7 @@ function App() {
         )}
       </div>
     </div>
+        </div>
   );
 }
 
