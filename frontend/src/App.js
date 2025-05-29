@@ -1,162 +1,241 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import "./App.css";
-import { PieChart, Pie, Cell, Legend, Tooltip as RechartsTooltip } from 'recharts';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer
+} from 'recharts';
 
 const LANGUAGE_COLORS = {
-  JavaScript: '#f1e05a',  // Yellow
-  Python: '#3572A5',      // Blue
-  Java: '#b07219',        // Brown
-  TypeScript: '#2b7489',  // Dark blue
-  Ruby: '#701516',        // Dark red
-  PHP: '#4F5D95',         // Purple blue
-  C: '#555555',           // Dark gray
-  'C++': '#f34b7d',       // Pinkish
-  'C#': '#178600',        // Green
-  Go: '#00ADD8',          // Light blue
-  Shell: '#89e051',       // Green
-  Swift: '#ffac45',       // Orange
-  Kotlin: '#F18E33',      // Orange
-  Rust: '#dea584',        // Tan
-  HTML: '#e34c26',        // Orange-red
-  CSS: '#563d7c',         // Purple
-  ObjectiveC: '#438eff',  // Light blue
-  Scala: '#c22d40',       // Red
-  Dart: '#00B4AB',        // Cyan
-  Vue: '#41b883',         // Green
-  Unknown: '#999999',     // Gray fallback
+  JavaScript: '#f1e05a',
+  Python: '#3572A5',
+  Java: '#b07219',
+  TypeScript: '#2b7489',
+  Ruby: '#701516',
+  PHP: '#4F5D95',
+  C: '#555555',
+  'C++': '#f34b7d',
+  'C#': '#178600',
+  Go: '#00ADD8',
+  Shell: '#89e051',
+  Swift: '#ffac45',
+  Kotlin: '#F18E33',
+  Rust: '#dea584',
+  HTML: '#e34c26',
+  CSS: '#563d7c',
+  ObjectiveC: '#438eff',
+  Scala: '#c22d40',
+  Dart: '#00B4AB',
+  Vue: '#41b883',
+  Unknown: '#999999',
 };
 
 const GRAY_COLOR = '#999999';
 
 function App() {
   const [username, setUsername] = useState('');
-  const [userData, setUserData] = useState(null);
-  const [repos, setRepos] = useState([]);
+  const [userCards, setUserCards] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [recentRepos, setRecentRepos] = useState([]);
 
-  async function fetchGitHubData() {
+  async function fetchGitHubData(event) {
+    event.preventDefault();
+    if (!username.trim()) return;
     setError('');
-    setUserData(null);
-    setRepos([]);
-    setRecentRepos([]);
-
+    setLoading(true);
     try {
       const userRes = await axios.get(`http://localhost:8000/user/${username}`);
-      setUserData(userRes.data);
-
       const reposRes = await axios.get(`http://localhost:8000/user/${username}/repos`);
-      setRepos(reposRes.data);
-
       const recentRes = await axios.get(`http://localhost:8000/user/${username}/repos/recent`);
-      setRecentRepos(recentRes.data);
 
+      const newCard = {
+        id: Date.now(),
+        userData: userRes.data,
+        repos: reposRes.data,
+        recentRepos: recentRes.data,
+        expanded: true
+      };
+
+      setUserCards(prev => [newCard, ...prev]);
+      setUsername('');
     } catch (err) {
       setError('User not found or API rate limit exceeded');
+    } finally {
+      setLoading(false);
     }
   }
 
-  const languageCount = {};
-  repos.forEach(repo => {
-    const lang = repo.language || 'Unknown';
-    languageCount[lang] = (languageCount[lang] || 0) + 1;
-  });
+  function toggleCard(id) {
+    setUserCards(prev =>
+      prev.map(card =>
+        card.id === id ? { ...card, expanded: !card.expanded } : card
+      )
+    );
+  }
 
-  const pieData = Object.entries(languageCount).map(([name, value]) => ({ name, value }));
+  function routeToProfile(username) {
+    window.open(`https://github.com/${username}`, '_blank');
+  }
 
-  const getColor = (language) => LANGUAGE_COLORS[language] || GRAY_COLOR;
+  function getColor(language) {
+    return LANGUAGE_COLORS[language] || GRAY_COLOR;
+  }
 
   return (
-      <div>
     <div className="min-h-screen bg-base-200 p-6">
       <div className="max-w-3xl mx-auto">
         <h1 className="text-4xl font-bold text-center mb-6">Athena: GitHub Analytics</h1>
+        <p className="text-center mb-2">Start searching here</p>
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
-          <input
-            type="text"
-            placeholder="Enter GitHub username"
-            value={username}
-            onChange={e => setUsername(e.target.value)}
-            className="input input-bordered w-full sm:w-auto"
-          />
-          <button onClick={fetchGitHubData} className="btn btn-primary">
-            Search
-          </button>
-        </div>
-
-        {error && <p className="text-red-500 text-center">{error}</p>}
-
-        {userData && (
-          <div className="card bg-base-100 shadow-xl p-6">
-            <div className="flex items-center gap-4">
-              <img src={userData.avatar_url} alt="avatar" className="rounded-full w-24 h-24" />
-              <div>
-                <h2 className="text-2xl font-semibold">{userData.login}</h2>
-                <p className="text-sm text-gray-500">
-                  Followers: {userData.followers} | Following: {userData.following} | Public Repos: {userData.public_repos}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <h3 className="text-lg font-bold mb-2">Languages Used in Repos</h3>
-              {pieData.length > 0 ? (
-                <PieChart width={400} height={400}>
-                  <Pie
-                    data={pieData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={120}
-                    label
-                  >
-                    {pieData.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={getColor(entry.name)}
-                      />
-                    ))}
-                  </Pie>
-                  <RechartsTooltip
-                    formatter={(value, name) => [`${value} repo(s)`, name]}
-                    wrapperStyle={{ fontSize: '14px' }}
-                  />
-                  <Legend />
-                </PieChart>
-              ) : (
-                <p className="text-sm text-gray-500">No repositories found.</p>
-              )}
-            </div>
-
-            <div className="mt-6">
-              <h3 className="text-lg font-bold mb-2">Most Recently Active Repositories</h3>
-              {recentRepos.length > 0 ? (
-                <ul className="list-disc list-inside text-sm text-blue-600">
-                  {recentRepos.map((repo, index) => (
-                    <li key={index}>
-                      <a
-                        href={repo.html_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="link link-hover"
-                      >
-                        {repo.name}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-gray-500">No recent repositories found.</p>
-              )}
-            </div>
+        <form onSubmit={fetchGitHubData} className="flex items-center justify-center gap-2 mb-6">
+          <div className="flex items-center bg-white rounded-full px-3 h-10 w-full max-w-md">
+            <input
+                type="search"
+                name="search"
+                placeholder="Search GitHub Username"
+                value={username}
+                onChange={e => setUsername(e.target.value)}
+                className="flex-grow text-sm focus:outline-none text-black"
+            />
+            <button type="submit" className="ml-2">
+              <img src="/search.svg" alt="Search" className="w-5 h-5 "/>
+            </button>
           </div>
+        </form>
+
+
+        {loading && (
+            <div className="card bg-base-100 shadow-xl p-6 border border-gray-300 rounded-lg text-center">
+              <p className="text-lg font-semibold">Loading...</p>
+            </div>
         )}
+
+        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
+
+        {userCards.map(card => {
+          const languageCount = {};
+          card.repos.forEach(repo => {
+            const lang = repo.language || 'Unknown';
+            languageCount[lang] = (languageCount[lang] || 0) + 1;
+          });
+          const pieData = Object.entries(languageCount).map(([name, value]) => ({name, value}));
+
+          return (
+              <div key={card.id} className="mb-6 border rounded-lg overflow-hidden shadow">
+                {/* Horizontal Bar Header */}
+                <div
+                    onClick={() => toggleCard(card.id)}
+                    className="flex justify-between items-center cursor-pointer bg-base-300 px-4 py-3"
+                >
+                  <span className="font-semibold">{card.userData.login}</span>
+                  <svg
+                      className={`w-5 h-5 transform transition-transform duration-300 ${
+                          card.expanded ? 'rotate-180' : ''
+                      }`}
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/>
+                  </svg>
+                </div>
+
+                <div
+                    className={`transition-all duration-500 overflow-hidden ${
+                        card.expanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
+                    }`}
+                >
+                  <div className="card bg-base-100 p-6">
+                    <div className="flex items-center gap-4">
+                      <img
+                          src={card.userData.avatar_url}
+                          alt="avatar"
+                          className="rounded-full w-24 h-24 cursor-pointer"
+                          onClick={() => routeToProfile(card.userData.login)}
+                      />
+                      <div>
+                        <h2 className="text-2xl font-semibold">{card.userData.login}</h2>
+                        <p className="text-sm text-gray-500">
+                          Followers: {card.userData.followers} | Following: {card.userData.following} | Public
+                          Repos: {card.userData.public_repos}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-6">
+                      <h3 className="text-lg font-bold mb-2">Languages Used in Repositories</h3>
+                      {pieData.length > 0 ? (
+                          <div className="w-full h-80 md:h-[400px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart>
+                                <Pie
+                                    data={pieData}
+                                    dataKey="value"
+                                    nameKey="name"
+                                    cx="50%"
+                                    cy="50%"
+                                    outerRadius="60%"
+                                    label
+                                >
+                                  {pieData.map((entry, index) => (
+                                      <Cell key={`cell-${index}`} fill={getColor(entry.name)}/>
+                                  ))}
+                                </Pie>
+                                <RechartsTooltip
+                                    formatter={(value, name) => [`${value} repo(s)`, name]}
+                                    wrapperStyle={{fontSize: '14px'}}
+                                />
+                                <Legend
+                                    layout="horizontal"
+                                    verticalAlign="bottom"
+                                    align="center"
+                                    wrapperStyle={{fontSize: '12px'}}
+                                />
+                              </PieChart>
+                            </ResponsiveContainer>
+                          </div>
+                      ) : (
+                          <p className="text-sm text-gray-500">No repositories found.</p>
+                      )}
+                    </div>
+
+                    <div className="mt-6">
+                      <h3 className="text-lg font-bold mb-2">Most Recently Active Repositories</h3>
+                      {card.recentRepos.length > 0 ? (
+                          <ul className="list-disc list-inside text-sm text-blue-600">
+                            {card.recentRepos.map((repo, index) => (
+                                <li key={index}>
+                                  <a
+                                      href={repo.html_url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="link link-hover text-blue-50"
+                                  >
+                                    {repo.name}
+                                  </a>
+                                </li>
+                            ))}
+                          </ul>
+                      ) : (
+                          <p className="text-sm text-gray-500">No recent repositories found.</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+          );
+        })}
+
+        <footer className="flex text-center justify-end p-3 text-xs text-gray-400">
+          Jason Chen. All rights reserved.
+        </footer>
       </div>
     </div>
-        </div>
   );
 }
 
