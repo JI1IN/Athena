@@ -39,4 +39,12 @@ async def get_recent_repos(username: str):
         top_3 = sorted_repos[:3]
         return [{"name": r["name"], "html_url": r["html_url"]} for r in top_3]
 
+@app.get("/user/{username}/repos/starred")
+async def get_top_starred_repos(username: str):
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(f"{GITHUB_API_BASE}/users/{username}/repos?per_page=100", headers=headers)
+        resp.raise_for_status()
+        repos = resp.json()
+        top_starred = sorted(repos, key=lambda r: r.get("stargazers_count", 0), reverse=True)[:3]
+        return [{"name": r["name"], "html_url": r["html_url"], "stars": r["stargazers_count"]} for r in top_starred]
 
