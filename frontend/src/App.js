@@ -41,6 +41,8 @@ function App() {
   const [userCards, setUserCards] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [draggedCardId, setDraggedCardId] = useState(null);
+  const [dragOverId, setDragOverId] = useState(null);
 
   async function fetchGitHubData(event) {
     event.preventDefault();
@@ -99,6 +101,37 @@ function App() {
     return LANGUAGE_COLORS[language] || GRAY_COLOR;
   }
 
+  function handleDragStart(e, id) {
+  setDraggedCardId(id);
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function handleDragOver(e, id) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  setDragOverId(id);
+}
+
+
+function handleDrop(e, targetId) {
+  e.preventDefault();
+  setDragOverId(null);
+  if (draggedCardId === targetId) return;
+
+  const draggedIndex = userCards.findIndex((card) => card.id === draggedCardId);
+  const targetIndex = userCards.findIndex((card) => card.id === targetId);
+
+  if (draggedIndex < 0 || targetIndex < 0) return;
+
+  const updatedCards = [...userCards];
+  const [draggedCard] = updatedCards.splice(draggedIndex, 1);
+  updatedCards.splice(targetIndex, 0, draggedCard);
+
+  setUserCards(updatedCards);
+  setDraggedCardId(null);
+}
+
+
   return (
     <div className="min-h-screen bg-base-200 p-6">
       <div className="max-w-3xl mx-auto">
@@ -141,153 +174,166 @@ function App() {
           }));
 
           return (
-            <div key={card.id} className="mb-6 border rounded-lg overflow-hidden shadow">
               <div
-                onClick={() => toggleCard(card.id)}
-                className="flex justify-between items-center cursor-pointer bg-base-300 px-4 py-3"
-              >
-                <span className="font-semibold">{card.userData.login}</span>
-                <svg
-                  className={`w-5 h-5 transform transition-transform duration-300 ${
-                    card.expanded ? 'rotate-180' : ''
+                  key={card.id}
+                  className={`mb-6 border rounded-lg overflow-hidden shadow cursor-move ${
+                      dragOverId === card.id ? 'drag-over' : ''
                   }`}
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-
-              <div
-                className={`transition-all duration-500 overflow-hidden ${
-                  card.expanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
-                }`}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, card.id)}
+                  onDragOver={(e) => handleDragOver(e, card.id)}
+                  onDrop={(e) => handleDrop(e, card.id)}
+                  onDragLeave={() => setDragOverId(null)}
               >
-                <div className="card bg-base-100 p-6">
-                  <div className="flex items-center gap-4">
-                    <img
-                      src={card.userData.avatar_url}
-                      alt="avatar"
-                      className="rounded-full w-24 h-24 cursor-pointer"
-                      onClick={() => routeToProfile(card.userData.login)}
-                    />
-                    <div>
-                      <h2 className="text-2xl font-semibold">{card.userData.login}</h2>
-                      <p className="text-sm text-gray-500">
-                        Followers: {card.userData.followers} | Following: {card.userData.following} | Public Repos:{' '}
-                        {card.userData.public_repos}
-                      </p>
-                    </div>
-                  </div>
 
-                  <div className="mt-6">
-                    <h3 className="text-lg font-bold mb-2">Languages Used in Repositories</h3>
-                    {pieData.length > 0 ? (
-                      <div className="w-full h-80 md:h-[400px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={pieData}
-                              dataKey="value"
-                              nameKey="name"
-                              cx="50%"
-                              cy="50%"
-                              outerRadius="60%"
-                              label
-                            >
-                              {pieData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={getColor(entry.name)} />
-                              ))}
-                            </Pie>
-                            <RechartsTooltip
-                              formatter={(value, name) => [`${value} repo(s)`, name]}
-                              wrapperStyle={{ fontSize: '14px' }}
-                            />
-                            <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{ fontSize: '12px' }} />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-gray-500">No repositories found.</p>
-                    )}
-                  </div>
-
-                  <div className="mt-6">
-                    <div
-                      className="flex justify-between items-center cursor-pointer bg-base-200 px-3 py-2 rounded"
-                      onClick={() => toggleRepos(card.id)}
-                    >
-                      <h3 className="text-lg font-bold">Repositories</h3>
-                      <svg
-                        className={`w-5 h-5 transform transition-transform duration-300 ${
-                          card.reposExpanded ? 'rotate-180' : ''
-                        }`}
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        viewBox="0 0 24 24"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
-
-                    <div
-                      className={`transition-all duration-500 overflow-hidden ${
-                        card.reposExpanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'
+                <div
+                    onClick={() => toggleCard(card.id)}
+                    className="flex justify-between items-center cursor-pointer bg-base-300 px-4 py-3"
+                >
+                  <span className="font-semibold">{card.userData.login}</span>
+                  <svg
+                      className={`w-5 h-5 transform transition-transform duration-300 ${
+                          card.expanded ? 'rotate-180' : ''
                       }`}
-                    >
-                      {card.recentRepos.length === 0 && card.topStarredRepos.length === 0 ? (
-                        <p className="text-sm text-gray-500 mt-2">No repositories found.</p>
-                      ) : (
-                        <div className="space-y-4 mt-4">
-                          {card.recentRepos.length > 0 && (
-                            <div>
-                              <h4 className="font-semibold mb-1">Recently Active</h4>
-                              <ul className="list-disc list-inside text-sm text-blue-600">
-                                {card.recentRepos.map((repo, index) => (
-                                  <li key={`recent-${index}`}>
-                                    <a
-                                      href={repo.html_url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="link link-hover text-blue-50"
-                                    >
-                                      {repo.name}
-                                    </a>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/>
+                  </svg>
+                </div>
 
-                          {card.topStarredRepos.length > 0 && (
-                            <div>
-                              <h4 className="font-semibold mb-1">Top Starred</h4>
-                              <ul className="list-disc list-inside text-sm text-yellow-400">
-                                {card.topStarredRepos.map((repo, index) => (
-                                  <li key={`starred-${index}`}>
-                                    <a
-                                      href={repo.html_url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="link link-hover text-yellow-300"
-                                    >
-                                      {repo.name} ({repo.stars} ⭐)
-                                    </a>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                        </div>
+                <div
+                    className={`transition-all duration-500 overflow-hidden ${
+                        card.expanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
+                    }`}
+                >
+                  <div className="card bg-base-100 p-6">
+                    <div className="flex items-center gap-4">
+                      <img
+                          src={card.userData.avatar_url}
+                          alt="avatar"
+                          className="rounded-full w-24 h-24 cursor-pointer"
+                          onClick={() => routeToProfile(card.userData.login)}
+                      />
+                      <div>
+                        <h2 className="text-2xl font-semibold">{card.userData.login}</h2>
+                        <p className="text-sm text-gray-500">
+                          Followers: {card.userData.followers} | Following: {card.userData.following} | Public
+                          Repos:{' '}
+                          {card.userData.public_repos}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-6">
+                      <h3 className="text-lg font-bold mb-2">Languages Used in Repositories</h3>
+                      {pieData.length > 0 ? (
+                          <div className="w-full h-80 md:h-[400px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart>
+                                <Pie
+                                    data={pieData}
+                                    dataKey="value"
+                                    nameKey="name"
+                                    cx="50%"
+                                    cy="50%"
+                                    outerRadius="60%"
+                                    label
+                                >
+                                  {pieData.map((entry, index) => (
+                                      <Cell key={`cell-${index}`} fill={getColor(entry.name)}/>
+                                  ))}
+                                </Pie>
+                                <RechartsTooltip
+                                    formatter={(value, name) => [`${value} repo(s)`, name]}
+                                    wrapperStyle={{fontSize: '14px'}}
+                                />
+                                <Legend layout="horizontal" verticalAlign="bottom" align="center"
+                                        wrapperStyle={{fontSize: '12px'}}/>
+                              </PieChart>
+                            </ResponsiveContainer>
+                          </div>
+                      ) : (
+                          <p className="text-sm text-gray-500">No repositories found.</p>
                       )}
+                    </div>
+
+                    <div className="mt-6">
+                      <div
+                          className="flex justify-between items-center cursor-pointer bg-base-200 px-3 py-2 rounded"
+                          onClick={() => toggleRepos(card.id)}
+                      >
+                        <h3 className="text-lg font-bold">Repositories</h3>
+                        <svg
+                            className={`w-5 h-5 transform transition-transform duration-300 ${
+                                card.reposExpanded ? 'rotate-180' : ''
+                            }`}
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                      </div>
+
+                      <div
+                          className={`transition-all duration-500 overflow-hidden ${
+                              card.reposExpanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'
+                          }`}
+                      >
+                        {card.recentRepos.length === 0 && card.topStarredRepos.length === 0 ? (
+                            <p className="text-sm text-gray-500 mt-2">No repositories found.</p>
+                        ) : (
+                            <div className="space-y-4 mt-4">
+                              {card.recentRepos.length > 0 && (
+                                  <div>
+                                    <h4 className="font-semibold mb-1">Recently Active</h4>
+                                    <ul className="list-disc list-inside text-sm text-blue-600">
+                                      {card.recentRepos.map((repo, index) => (
+                                          <li key={`recent-${index}`}>
+                                            <a
+                                                href={repo.html_url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="link link-hover text-blue-50"
+                                            >
+                                              {repo.name}
+                                            </a>
+                                          </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                              )}
+
+                              {card.topStarredRepos.length > 0 && (
+                                  <div>
+                                    <h4 className="font-semibold mb-1">Top Starred</h4>
+                                    <ul className="list-disc list-inside text-sm text-yellow-400">
+                                      {card.topStarredRepos.map((repo, index) => (
+                                          <li key={`starred-${index}`}>
+                                            <a
+                                                href={repo.html_url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="link link-hover text-yellow-300"
+                                            >
+                                              {repo.name} ({repo.stars} ⭐)
+                                            </a>
+                                          </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                              )}
+                            </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
           );
         })}
 
