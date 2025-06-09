@@ -65,7 +65,7 @@ const LANGUAGE_COLORS = {
 const GRAY_COLOR = '#999999';
 
 function GitHubTool() {
-  useDocumentTitle('Athena | Home');
+  useDocumentTitle('Athena • Home');
   const [username, setUsername] = useState('');
   const [userCards, setUserCards] = useState([]);
   const [loading, setLoading] = useState(false);

@@ -2,7 +2,7 @@ import React from 'react';
 import {useDocumentTitle} from "./hooks/useDocumentTitle";
 
 function About() {
-    useDocumentTitle('Athena | About');
+    useDocumentTitle('Athena • About');
   return (
     <div className="p-6 max-w-3xl mx-auto text-center">
 
