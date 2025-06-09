@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useDocumentTitle } from './hooks/useDocumentTitle';
+import { useDocumentTitle } from './utils/useDocumentTitle';
 import {
   PieChart,
   Pie,
@@ -67,7 +67,14 @@ const GRAY_COLOR = '#999999';
 function GitHubTool() {
   useDocumentTitle('Athena • Home');
   const [username, setUsername] = useState('');
-  const [userCards, setUserCards] = useState([]);
+  const [userCards, setUserCards] = useState(() => {
+  const stored = localStorage.getItem('athena_user_cards');
+  try {
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [draggedCardId, setDraggedCardId] = useState(null);
@@ -82,6 +89,21 @@ useEffect(() => {
 
   return () => clearInterval(interval);
 }, []);
+
+useEffect(() => {
+  const storedCards = localStorage.getItem('athena_user_cards');
+  if (storedCards) {
+    try {
+      setUserCards(JSON.parse(storedCards));
+    } catch (err) {
+      console.error('Failed to parse saved cards:', err);
+    }
+  }
+}, []);
+
+useEffect(() => {
+  localStorage.setItem('athena_user_cards', JSON.stringify(userCards));
+}, [userCards]);
 
 
 

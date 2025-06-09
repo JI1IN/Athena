@@ -1,8 +1,8 @@
 import React from 'react';
-import {useDocumentTitle} from "./hooks/useDocumentTitle";
+import {useDocumentTitle} from "./utils/useDocumentTitle";
 
 function About() {
-    useDocumentTitle('Athena • About');
+    useDocumentTitle('Athena • What is Athena?');
   return (
     <div className="p-6 max-w-3xl mx-auto text-center">
 
@@ -16,3 +16,4 @@ function About() {
 }
 
 export default About;
+
