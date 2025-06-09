@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useDocumentTitle } from './hooks/useDocumentTitle';
 import {
   PieChart,
   Pie,
@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import '../App.css';
+import axios from "axios";
 const FONT_STYLES = [
   { fontFamily: "'Courier New', Courier, monospace", color: '#f1e05a' },
   { fontFamily: "'Roboto', sans-serif", color: '#3572A5' },
@@ -64,6 +65,7 @@ const LANGUAGE_COLORS = {
 const GRAY_COLOR = '#999999';
 
 function GitHubTool() {
+  useDocumentTitle('Athena | Home');
   const [username, setUsername] = useState('');
   const [userCards, setUserCards] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -171,6 +173,7 @@ useEffect(() => {
 
   return (
       <div className="max-w-4xl mx-auto p-6">
+
         <h1
             className="text-6xl font-bold text-center mb-6 transition-all duration-300"
             style={
@@ -181,7 +184,7 @@ useEffect(() => {
         >
           Athena
         </h1>
-        <p className="text-center mb-2">Start searching here</p>
+        <p className="text-center mb-2">Start searching here - it's literally free</p>
 
         <form onSubmit={fetchGitHubData} className="flex items-center justify-center gap-2 mb-6">
           <div className="flex items-center bg-white rounded-full px-3 h-10 w-full max-w-md">
