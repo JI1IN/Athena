@@ -359,7 +359,7 @@ function GitHubTool() {
                           {data.map((repo) => (
                             <li
                               key={repo.id}
-                              className="border border-gray-300 rounded p-3 hover:bg-gray-100 cursor-pointer"
+                              className="border border-gray-300 rounded p-3 hover:bg-gray-100 hover:text-black cursor-pointer"
                               onClick={() => window.open(repo.html_url, '_blank')}
                             >
                               <div className="flex justify-between items-center">
